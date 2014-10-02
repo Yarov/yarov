@@ -1,5 +1,4 @@
-var fs     = require('fs'),
-    config = require('../../server/config'),
+var fs = require('fs'),
     /**
      * Create new Polyglot object
      * @type {Polyglot}
@@ -10,7 +9,7 @@ I18n = function (ghost) {
 
     // TODO: validate
     var lang = ghost.settings('defaultLang'),
-        path = config().paths.lang,
+        path = ghost.paths().lang,
         langFilePath = path + lang + '.json';
 
     return function (req, res, next) {

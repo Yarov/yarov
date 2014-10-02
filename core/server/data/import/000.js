@@ -1,13 +1,8 @@
 var when   = require('when'),
-    _      = require('lodash'),
+    _      = require('underscore'),
     models = require('../../models'),
-    Importer000,
-    updatedSettingKeys;
-
-updatedSettingKeys = {
-    activePlugins: 'activeApps',
-    installedPlugins: 'installedApps'
-};
+    errors = require('../../errorHandling'),
+    Importer000;
 
 
 Importer000 = function () {
@@ -17,9 +12,8 @@ Importer000 = function () {
 
     this.importFrom = {
         '000': this.basicImport,
-        '001': this.basicImport,
-        '002': this.basicImport,
-        '003': this.basicImport
+        '001': this.tempImport,
+        '002': this.tempImport
     };
 };
 
@@ -42,7 +36,6 @@ Importer000.prototype.canImport = function (data) {
 
 
 function stripProperties(properties, data) {
-    data = _.clone(data, true);
     _.each(data, function (obj) {
         _.each(properties, function (property) {
             delete obj[property];
@@ -85,172 +78,82 @@ function preProcessPostTags(tableData) {
     return tableData;
 }
 
-function importTags(ops, tableData, transaction) {
+function importTags(ops, tableData) {
     tableData = stripProperties(['id'], tableData);
     _.each(tableData, function (tag) {
-        ops.push(models.Tag.findOne({name: tag.name}, {transacting: transaction}).then(function (_tag) {
+        ops.push(models.Tag.read({name: tag.name}).then(function (_tag) {
             if (!_tag) {
-                return models.Tag.add(tag, {user: 1, transacting: transaction})
-                    // add pass-through error handling so that bluebird doesn't think we've dropped it
-                    .otherwise(function (error) { return when.reject(error); });
+                return models.Tag.add(tag);
             }
             return when.resolve(_tag);
         }));
     });
 }
 
-function importPosts(ops, tableData, transaction) {
+function importPosts(ops, tableData) {
     tableData = stripProperties(['id'], tableData);
     _.each(tableData, function (post) {
-        ops.push(models.Post.add(post, {user: 1, transacting: transaction, importing: true})
-            // add pass-through error handling so that bluebird doesn't think we've dropped it
-            .otherwise(function (error) { return when.reject(error); }));
+        ops.push(models.Post.add(post));
     });
 }
 
-function importUsers(ops, tableData, transaction) {
-    // don't override the users credentials
-    tableData = stripProperties(['id', 'email', 'password'], tableData);
+function importUsers(ops, tableData) {
+    tableData = stripProperties(['id'], tableData);
     tableData[0].id = 1;
-    ops.push(models.User.edit(tableData[0], {id: 1, user: 1, transacting: transaction})
-        // add pass-through error handling so that bluebird doesn't think we've dropped it
-        .otherwise(function (error) { return when.reject(error); }));
+    ops.push(models.User.edit(tableData[0]));
 }
 
-function importSettings(ops, tableData, transaction) {
+function importSettings(ops, tableData) {
     // for settings we need to update individual settings, and insert any missing ones
-    // settings we MUST NOT update are 'core' and 'theme' settings
-    // as all of these will cause side effects which don't make sense for an import
-    var blackList = ['core', 'theme'];
-
+    // the one setting we MUST NOT update is the databaseVersion settings
+    var blackList = ['databaseVersion'];
     tableData = stripProperties(['id'], tableData);
     tableData = _.filter(tableData, function (data) {
-        return blackList.indexOf(data.type) === -1;
+        return blackList.indexOf(data.key) === -1;
     });
 
-    // Clean up legacy plugin setting references
-    _.each(tableData, function (datum) {
-        datum.key = updatedSettingKeys[datum.key] || datum.key;
-    });
-
-    ops.push(models.Settings.edit(tableData, {user: 1, transacting: transaction})
-         // add pass-through error handling so that bluebird doesn't think we've dropped it
-         .otherwise(function (error) { return when.reject(error); }));
+    ops.push(models.Settings.edit(tableData));
 }
-
-function importApps(ops, tableData, transaction) {
-    tableData = stripProperties(['id'], tableData);
-    _.each(tableData, function (app) {
-        // Avoid duplicates
-        ops.push(models.App.findOne({name: app.name}, {transacting: transaction}).then(function (_app) {
-            if (!_app) {
-                return models.App.add(app, {transacting: transaction})
-                    // add pass-through error handling so that bluebird doesn't think we've dropped it
-                    .otherwise(function (error) { return when.reject(error); });
-            }
-            return when.resolve(_app);
-        }));
-    });
-}
-
-// function importAppSettings(ops, tableData, transaction) {
-//     var appsData = tableData.apps,
-//         appSettingsData = tableData.app_settings,
-//         appName;
-//
-//     appSettingsData = stripProperties(['id'], appSettingsData);
-//
-//     _.each(appSettingsData, function (appSetting) {
-//         // Find app to attach settings to
-//         appName = _.find(appsData, function (app) {
-//             return app.id === appSetting.app_id;
-//         }).name;
-//         ops.push(models.App.findOne({name: appName}, {transacting: transaction}).then(function (_app) {
-//             if (_app) {
-//                 // Fix app_id
-//                 appSetting.app_id = _app.id;
-//                 return models.AppSetting.add(appSetting, {transacting: transaction})
-//                     // add pass-through error handling so that bluebird doesn't think we've dropped it
-//                     .otherwise(function (error) { return when.reject(error); });
-//             }
-//             // Gracefully ignore missing apps
-//             return when.resolve(_app);
-//         }));
-//     });
-// }
 
 // No data needs modifying, we just import whatever tables are available
 Importer000.prototype.basicImport = function (data) {
     var ops = [],
         tableData = data.data;
-    return models.Base.transaction(function (t) {
 
-        // Do any pre-processing of relationships (we can't depend on ids)
-        if (tableData.posts_tags && tableData.posts && tableData.tags) {
-            tableData = preProcessPostTags(tableData);
-        }
+    // Do any pre-processing of relationships (we can't depend on ids)
+    if (tableData.posts_tags && tableData.posts && tableData.tags) {
+        tableData = preProcessPostTags(tableData);
+    }
 
-        // Import things in the right order:
-        if (tableData.tags && tableData.tags.length) {
-            importTags(ops, tableData.tags, t);
-        }
+    // Import things in the right order:
+    if (tableData.tags && tableData.tags.length) {
+        importTags(ops, tableData.tags);
+    }
 
-        if (tableData.posts && tableData.posts.length) {
-            importPosts(ops, tableData.posts, t);
-        }
+    if (tableData.posts && tableData.posts.length) {
+        importPosts(ops, tableData.posts);
+    }
 
-        if (tableData.users && tableData.users.length) {
-            importUsers(ops, tableData.users, t);
-        }
+    if (tableData.users && tableData.users.length) {
+        importUsers(ops, tableData.users);
+    }
 
-        if (tableData.settings && tableData.settings.length) {
-            importSettings(ops, tableData.settings, t);
-        }
+    if (tableData.settings && tableData.settings.length) {
+        importSettings(ops, tableData.settings);
+    }
 
-        if (tableData.apps && tableData.apps.length) {
-            importApps(ops, tableData.apps, t);
+    /** do nothing with these tables, the data shouldn't have changed from the fixtures
+     *   permissions
+     *   roles
+     *   permissions_roles
+     *   permissions_users
+     *   roles_users
+     */
 
-            // ToDo: This is rather complicated
-            // Only import settings if there are apps defined
-            //if (tableData.app_settings && tableData.app_settings.length) {
-            //    importAppSettings(ops, _.pick(tableData, 'apps', 'app_settings'), t);
-            //}
-
-            //if (tableData.app_fields && tableData.app_fields.length) {
-            //    importAppFields(ops, _.pick(tableData, 'apps', 'posts', 'app_fields'), t);
-            //}
-        }
-
-        /** do nothing with these tables, the data shouldn't have changed from the fixtures
-         *   permissions
-         *   roles
-         *   permissions_roles
-         *   permissions_users
-         *   roles_users
-         */
-
-        // Write changes to DB, if successful commit, otherwise rollback
-        // when.all() does not work as expected, when.settle() does.
-        when.settle(ops).then(function (descriptors) {
-            var errors = [];
-
-            descriptors.forEach(function (d) {
-                if (d.state === 'rejected') {
-                    errors = errors.concat(d.reason);
-                }
-            });
-
-            if (errors.length === 0) {
-                t.commit();
-            } else {
-                t.rollback(errors);
-            }
-        });
-    }).then(function () {
-        //TODO: could return statistics of imported items
-        return when.resolve();
-    }, function (error) {
-        return when.reject(error);
+    return when.all(ops).then(function (results) {
+        return when.resolve(results);
+    }, function (err) {
+        return when.reject("Error importing data: " + err.message || err, err.stack);
     });
 };
 

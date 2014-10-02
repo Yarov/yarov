@@ -1,31 +1,71 @@
-/*global Ember */
+/*global window, document, Ghost, Backbone, $, _ */
+(function () {
+    "use strict";
 
-// ensure we don't share routes between all Router instances
-var Router = Ember.Router.extend();
+    Ghost.Router = Backbone.Router.extend({
 
-Router.reopen({
-    location: 'trailing-history', // use HTML5 History API instead of hash-tag based URLs
-    rootURL: '/ghost/ember/' // admin interface lives under sub-directory /ghost
-});
+        routes: {
+            ''                 : 'blog',
+            'content/'         : 'blog',
+            'settings(/:pane)/' : 'settings',
+            'editor(/:id)/'     : 'editor',
+            'debug/'           : 'debug',
+            'register/'        : 'register',
+            'signup/'          : 'signup',
+            'signin/'          : 'login',
+            'forgotten/'       : 'forgotten'
+        },
 
-Router.map(function () {
-    this.route('signin');
-    this.route('signup');
-    this.route('forgotten');
-    this.route('reset', { path: '/reset/:token' });
-    this.resource('posts', { path: '/' }, function () {
-        this.route('post', { path: ':post_id' });
+        signup: function () {
+            Ghost.currentView = new Ghost.Views.Signup({ el: '.js-signup-box' });
+        },
+
+        login: function () {
+            Ghost.currentView = new Ghost.Views.Login({ el: '.js-login-box' });
+        },
+
+        forgotten: function () {
+            Ghost.currentView = new Ghost.Views.Forgotten({ el: '.js-forgotten-box' });
+        },
+
+        blog: function () {
+            var posts = new Ghost.Collections.Posts();
+            posts.fetch({ data: { status: 'all', orderBy: ['updated_at', 'DESC'] } }).then(function () {
+                Ghost.currentView = new Ghost.Views.Blog({ el: '#main', collection: posts });
+            });
+        },
+
+        settings: function (pane) {
+            if (!pane) {
+                // Redirect to settings/general if no pane supplied
+                this.navigate('/settings/general/', {
+                    trigger: true,
+                    replace: true
+                });
+                return;
+            }
+
+            // only update the currentView if we don't already have a Settings view
+            if (!Ghost.currentView || !(Ghost.currentView instanceof Ghost.Views.Settings)) {
+                Ghost.currentView = new Ghost.Views.Settings({ el: '#main', pane: pane });
+            }
+        },
+
+        editor: function (id) {
+            var post = new Ghost.Models.Post();
+            post.urlRoot = Ghost.settings.apiRoot + '/posts';
+            if (id) {
+                post.id = id;
+                post.fetch().then(function () {
+                    Ghost.currentView = new Ghost.Views.Editor({ el: '#main', model: post });
+                });
+            } else {
+                Ghost.currentView = new Ghost.Views.Editor({ el: '#main', model: post });
+            }
+        },
+
+        debug: function () {
+            Ghost.currentView = new Ghost.Views.Debug({ el: "#main" });
+        }
     });
-    this.resource('editor', { path: '/editor/:post_id' });
-    this.route('new', { path: '/editor' });
-    this.resource('settings', function () {
-        this.route('general');
-        this.route('user');
-        this.route('apps');
-    });
-    this.route('debug');
-    //Redirect legacy content to posts
-    this.route('content');
-});
-
-export default Router;
+}());

@@ -1,14 +1,21 @@
-var ghostBookshelf = require('./base'),
+var GhostBookshelf = require('./base'),
     User           = require('./user').User,
     Role           = require('./role').Role,
-    App            = require('./app').App,
-
     Permission,
     Permissions;
 
-Permission = ghostBookshelf.Model.extend({
+Permission = GhostBookshelf.Model.extend({
 
     tableName: 'permissions',
+
+    permittedAttributes: ['id', 'uuid', 'name', 'object_type', 'action_type', 'object_id', 'created_at', 'created_by',
+            'updated_at', 'updated_by'],
+
+
+    validate: function () {
+        // TODO: validate object_type, action_type and object_id
+        GhostBookshelf.validator.check(this.get('name'), "Permission name cannot be blank").notEmpty();
+    },
 
     roles: function () {
         return this.belongsToMany(Role);
@@ -16,35 +23,10 @@ Permission = ghostBookshelf.Model.extend({
 
     users: function () {
         return this.belongsToMany(User);
-    },
-
-    apps: function () {
-        return this.belongsToMany(App);
     }
-}, {
-    /**
-    * Returns an array of keys permitted in a method's `options` hash, depending on the current method.
-    * @param {String} methodName The name of the method to check valid options for.
-    * @return {Array} Keys allowed in the `options` hash of the model's method.
-    */
-    permittedOptions: function (methodName) {
-        var options = ghostBookshelf.Model.permittedOptions(),
-
-            // whitelists for the `options` hash argument on methods, by method name.
-            // these are the only options that can be passed to Bookshelf / Knex.
-            validOptions = {
-                add: ['user']
-            };
-
-        if (validOptions[methodName]) {
-            options = options.concat(validOptions[methodName]);
-        }
-
-        return options;
-    },
 });
 
-Permissions = ghostBookshelf.Collection.extend({
+Permissions = GhostBookshelf.Collection.extend({
     model: Permission
 });
 

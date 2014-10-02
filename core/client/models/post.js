@@ -1,45 +1,70 @@
-var Post = DS.Model.extend({
-    uuid: DS.attr('string'),
-    title: DS.attr('string'),
-    slug: DS.attr('string'),
-    markdown: DS.attr('string'),
-    html: DS.attr('string'),
-    image: DS.attr('string'),
-    featured: DS.attr('boolean'),
-    page: DS.attr('boolean'),
-    status: DS.attr('string'),
-    language: DS.attr('string'),
-    meta_title: DS.attr('string'),
-    meta_description: DS.attr('string'),
-    author: DS.belongsTo('user',  { async: true }),
-    created_at: DS.attr('date'),
-    created_by: DS.belongsTo('user', { async: true }),
-    updated_at: DS.attr('date'),
-    updated_by: DS.belongsTo('user', { async: true }),
-    published_at: DS.attr('date'),
-    published_by: DS.belongsTo('user', { async: true }),
-    tags: DS.hasMany('tag', { async: true }),
+/*global window, document, Ghost, $, _, Backbone */
+(function () {
+    'use strict';
 
-    generateSlug: function () {
-        var title = this.get('title'),
-            url = this.get('ghostPaths').apiUrl('posts', 'slug', encodeURIComponent(title));
+    Ghost.Models.Post = Backbone.Model.extend({
 
-        return ic.ajax.request(url, {
-                type: 'GET'
+        defaults: {
+            status: 'draft'
+        },
+
+        blacklist: ['published', 'draft'],
+
+        parse: function (resp) {
+            if (resp.status) {
+                resp.published = !!(resp.status === 'published');
+                resp.draft = !!(resp.status === 'draft');
+            }
+            if (resp.tags) {
+                // TODO: parse tags into it's own collection on the model (this.tags)
+                return resp;
+            }
+            return resp;
+        },
+
+        validate: function (attrs) {
+            if (_.isEmpty(attrs.title)) {
+                return 'You must specify a title for the post.';
+            }
+        },
+
+        addTag: function (tagToAdd) {
+            var tags = this.get('tags') || [];
+            tags.push(tagToAdd);
+            this.set('tags', tags);
+        },
+
+        removeTag: function (tagToRemove) {
+            var tags = this.get('tags') || [];
+            tags = _.reject(tags, function (tag) {
+                return tag.id === tagToRemove.id || tag.name === tagToRemove.name;
             });
-    },
-
-    validationErrors: function () {
-        var validationErrors = [];
-
-        if (!this.get('title.length')) {
-            validationErrors.push({
-                message: "You must specify a title for the post."
-            });
+            this.set('tags', tags);
         }
+    });
 
-        return validationErrors;
-    }.property('title')
-});
+    Ghost.Collections.Posts = Backbone.Collection.extend({
+        currentPage: 1,
+        totalPages: 0,
+        totalPosts: 0,
+        nextPage: 0,
+        prevPage: 0,
 
-export default Post;
+        url: Ghost.settings.apiRoot + '/posts/',
+        model: Ghost.Models.Post,
+
+        parse: function (resp) {
+            if (_.isArray(resp.posts)) {
+                this.limit = resp.limit;
+                this.currentPage = resp.page;
+                this.totalPages = resp.pages;
+                this.totalPosts = resp.total;
+                this.nextPage = resp.next;
+                this.prevPage = resp.prev;
+                return resp.posts;
+            }
+            return resp;
+        }
+    });
+
+}());
