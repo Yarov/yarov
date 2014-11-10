@@ -1,11 +1,23 @@
 {{!< default}}
 
 {{! The comment above "< default" means - insert everything in this file into
-    the {body} of the default.hbs template, which contains our header/footer. }}
+the {body} of the default.hbs template, which contains our header/footer. }}
 
 {{! The big featured header on the homepage, with the site logo and description }}
+
+<div class="menu">
+    <div class="container-menu">
+        <nav>
+            <ul>
+                <li><a href="#">Blog</a></li>
+                <li><a href="#">About Me</a></li>
+            </ul>
+        </nav>
+    </div>
+
+</div>
 <header class="site-head" {{#if @blog.cover}}style="background-image: url({{@blog.cover}})"{{/if}}>
-    <div class="vertical">
+    <div class="header">
         <div class="site-head-content inner">
             {{#if @blog.logo}}<a class="blog-logo" href="{{@blog.url}}"><img src="{{@blog.logo}}" alt="Blog Logo" /></a>{{/if}}
             <h1 class="blog-title">{{@blog.title}}</h1>
@@ -27,12 +39,11 @@
 
     <article class="{{post_class}}">
         <header class="post-header">
-            <span class="post-meta"><time datetime="{{date format='YYYY-MM-DD'}}">{{date format="DD MMM YYYY"}}</time> {{tags prefix="on "}}</span>
+        <span class="post-meta"><time datetime="{{date format='YYYY-MM-DD'}}">{{date format="MMM DD"}}</time> </span>
             <h2 class="post-title"><a href="{{url}}">{{{title}}}</a></h2>
-
         </header>
         <section class="post-excerpt">
-            <p>{{content words="40"}}&hellip;</p>
+            {{!-- <p>{{content words="40"}}&hellip;</p> --}}
         </section>
     </article>
 

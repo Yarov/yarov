@@ -17,101 +17,101 @@
     10.  Media Queries (Tablet)
     11. Media Queries (Mobile)
 
- */
+    */
 
 /* ==========================================================================
    0. Normalize.css v2.1.3 | MIT License | git.io/normalize | (minified)
    ========================================================================== */
 
-@import url(http://fonts.googleapis.com/css?family=Poiret+One);
+   @import url(http://fonts.googleapis.com/css?family=Poiret+One);
 
-article, aside, details,
-figcaption, figure,
-footer, header, hgroup,
-main, nav, section,
-summary { display: block; }
-audio, canvas, video { display: inline-block; }
-audio:not([controls]) { display: none; height: 0; }
-[hidden], template { display: none; }
-html {
-   font-family: sans-serif;
-   -ms-text-size-adjust: 100%;
-   -webkit-text-size-adjust: 100%;
-}
-body { margin: 0; }
-a { background: transparent; }
-a:focus { outline: thin dotted; }
-a:active, a:hover { outline: 0; }
-h1 { font-size: 2em; margin: 0.67em 0; }
-abbr[title] { border-bottom: 1px dotted; }
-b, strong { font-weight: bold; }
-dfn { font-style: italic; }
-hr {
-   -moz-box-sizing: content-box;
-   box-sizing: content-box;
-   height: 0;
-}
-mark { background: #ff0; color: #000; }
-code, kbd, pre,
-samp { font-family: monospace, serif; font-size: 1em; }
-pre { white-space: pre-wrap; }
-q { quotes: "\201C" "\201D" "\2018" "\2019"; }
-small { font-size: 80%; }
-sub, sup {
-   font-size: 75%;
-   line-height: 0;
-   position: relative;
-   vertical-align: baseline;
-}
-sup { top: -0.5em; }
-sub { bottom: -0.25em; }
-img { border: 0; }
-svg:not(:root) { overflow: hidden; }
-figure { margin: 0; }
-fieldset {
-   border: 1px solid #c0c0c0;
-   margin: 0 2px;
-   padding: 0.35em 0.625em 0.75em;
-}
-legend { border: 0; padding: 0; }
-button, input, select,
-textarea { font-family: inherit; font-size: 100%; margin: 0; }
-button, input { line-height: normal; }
-button, select { text-transform: none; }
-button, html input[type="button"],
-input[type="reset"], input[type="submit"] {
-   -webkit-appearance: button;
-   cursor: pointer;
-}
-button[disabled], html input[disabled] { cursor: default; }
-input[type="checkbox"],
-input[type="radio"] { box-sizing: border-box; padding: 0; }
-input[type="search"] {
-   -webkit-appearance: textfield;
-   -moz-box-sizing: content-box;
-   -webkit-box-sizing: content-box;
-   box-sizing: content-box;
-}
-input[type="search"]::-webkit-search-cancel-button,
-input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; }
-button::-moz-focus-inner,
-input::-moz-focus-inner { border: 0; padding: 0; }
-textarea { overflow: auto; vertical-align: top; }
-table { border-collapse: collapse; border-spacing: 0; }
+   article, aside, details,
+   figcaption, figure,
+   footer, header, hgroup,
+   main, nav, section,
+   summary { display: block; }
+   audio, canvas, video { display: inline-block; }
+   audio:not([controls]) { display: none; height: 0; }
+   [hidden], template { display: none; }
+   html {
+     font-family: sans-serif;
+     -ms-text-size-adjust: 100%;
+     -webkit-text-size-adjust: 100%;
+ }
+ body { margin: 0; }
+ a { background: transparent; }
+ a:focus { outline: thin dotted; }
+ a:active, a:hover { outline: 0; }
+ h1 { font-size: 2em; margin: 0.67em 0; }
+ abbr[title] { border-bottom: 1px dotted; }
+ b, strong { font-weight: bold; }
+ dfn { font-style: italic; }
+ hr {
+     -moz-box-sizing: content-box;
+     box-sizing: content-box;
+     height: 0;
+ }
+ mark { background: #ff0; color: #000; }
+ code, kbd, pre,
+ samp { font-family: monospace, serif; font-size: 1em; }
+ pre { white-space: pre-wrap; }
+ q { quotes: "\201C" "\201D" "\2018" "\2019"; }
+ small { font-size: 80%; }
+ sub, sup {
+     font-size: 75%;
+     line-height: 0;
+     position: relative;
+     vertical-align: baseline;
+ }
+ sup { top: -0.5em; }
+ sub { bottom: -0.25em; }
+ img { border: 0; }
+ svg:not(:root) { overflow: hidden; }
+ figure { margin: 0; }
+ fieldset {
+     border: 1px solid #c0c0c0;
+     margin: 0 2px;
+     padding: 0.35em 0.625em 0.75em;
+ }
+ legend { border: 0; padding: 0; }
+ button, input, select,
+ textarea { font-family: inherit; font-size: 100%; margin: 0; }
+ button, input { line-height: normal; }
+ button, select { text-transform: none; }
+ button, html input[type="button"],
+ input[type="reset"], input[type="submit"] {
+     -webkit-appearance: button;
+     cursor: pointer;
+ }
+ button[disabled], html input[disabled] { cursor: default; }
+ input[type="checkbox"],
+ input[type="radio"] { box-sizing: border-box; padding: 0; }
+ input[type="search"] {
+     -webkit-appearance: textfield;
+     -moz-box-sizing: content-box;
+     -webkit-box-sizing: content-box;
+     box-sizing: content-box;
+ }
+ input[type="search"]::-webkit-search-cancel-button,
+ input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; }
+ button::-moz-focus-inner,
+ input::-moz-focus-inner { border: 0; padding: 0; }
+ textarea { overflow: auto; vertical-align: top; }
+ table { border-collapse: collapse; border-spacing: 0; }
 
 
 /* ==========================================================================
    1. Icons - Sets up the icon font and respective classes
    ========================================================================== */
 
-/* Import the font file with the icons in it */
-@font-face {
+   /* Import the font file with the icons in it */
+   @font-face {
     font-family: 'icons';
     src:url('../fonts/icons.eot');
     src:url('../fonts/icons.eot?#iefix') format('embedded-opentype'),
-        url('../fonts/icons.woff') format('woff'),
-        url('../fonts/icons.ttf') format('truetype'),
-        url('../fonts/icons.svg#icons') format('svg');
+    url('../fonts/icons.woff') format('woff'),
+    url('../fonts/icons.ttf') format('truetype'),
+    url('../fonts/icons.svg#icons') format('svg');
     font-weight: normal;
     font-style: normal;
 }
@@ -135,7 +135,7 @@ table { border-collapse: collapse; border-spacing: 0; }
 }
 
 /* Each icon is created by inserting the corret character into the
-   content of the :before pseudo element. Like a boss. */
+content of the :before pseudo element. Like a boss. */
 .icon-ghost:before {
     content: "\e000";
 }
@@ -158,7 +158,7 @@ table { border-collapse: collapse; border-spacing: 0; }
    2. General - Setting up some base styles
    ========================================================================== */
 
-html {
+   html {
     height: 100%;
     max-height: 100%;
     font-size: 62.5%;
@@ -167,7 +167,7 @@ html {
 body {
     height: 100%;
     max-height: 100%;
-    font-family: 'Noto Serif', serif;
+    /*font-family: 'Noto Serif', serif;*/
     font-size: 2.0rem;
     line-height: 1.6em;
     color: #3A4145;
@@ -351,8 +351,8 @@ kbd {
     background: #f4f4f4;
     border-radius: 4px;
     box-shadow:
-        0 1px 0 rgba(0, 0, 0, 0.2),
-        0 1px 0 0 #fff inset;
+    0 1px 0 rgba(0, 0, 0, 0.2),
+    0 1px 0 0 #fff inset;
 }
 
 table {
@@ -395,7 +395,7 @@ table tbody > tr:nth-child(odd) > th {
 
 table.plain tbody > tr:nth-child(odd) > td,
 table.plain tbody > tr:nth-child(odd) > th {
-   background: transparent;
+ background: transparent;
 }
 
 iframe, .fluid-width-video-wrapper {
@@ -414,9 +414,9 @@ margin on the iframe, cause it breaks stuff. */
    3. Utilities - These things get used a lot
    ========================================================================== */
 
-/* Clears shit */
-.clearfix:before,
-.clearfix:after {
+   /* Clears shit */
+   .clearfix:before,
+   .clearfix:after {
     content: " ";
     display: table;
 }
@@ -449,25 +449,41 @@ margin on the iframe, cause it breaks stuff. */
    4. General - The main styles for the the theme
    ========================================================================== */
 
-/*Social top*/
+   /*Social top*/
 
-.social a{
+   .social a{
     margin: 0 2rem;
 }
 
 
 /* Big cover image on the home page */
-.site-head {
+.post-head {
     position: relative;
     display: table;
     width: 100%;
-    height: 60%;
     margin-bottom: 5rem;
     text-align: center;
     color: #fff;
     /*background: #303538 no-repeat center center;*/
     background-size: cover;
     border-top: 20px #3c424f solid;
+}
+.site-head {
+    background: #FCFCFC;
+    position: relative;
+    display: table;
+    width: 100%;
+    /*height: 60%;*/
+    margin-bottom: 5rem;
+    text-align: center;
+    color: #999;
+    /*background: #303538 no-repeat center center;*/
+    padding-bottom: 6%;
+    background-size: cover;
+    /*border-top: 40px #3c424f solid;*/
+    -webkit-box-shadow: -1px 3px 6px 0px rgba(50, 50, 50, 0.1);
+    -moz-box-shadow:    -1px 3px 6px 0px rgba(50, 50, 50, 0.1);
+    box-shadow:         -1px 3px 6px 0px rgba(50, 50, 50, 0.1);
 }
 
 .blog-logo {
@@ -485,7 +501,7 @@ margin on the iframe, cause it breaks stuff. */
 
 /* The details of your blog. Defined in ghost/settings/ */
 .blog-title {
-    margin: 10px 0 10px 0;
+    margin: 0;
     font-size: 10rem;
     letter-spacing: -1px;
     font-weight: bold;
@@ -496,13 +512,14 @@ margin on the iframe, cause it breaks stuff. */
 }
 
 .blog-description {
-    margin: 0;
-    font-size: 1.8rem;
+    font-family: 'Open Sans', sans-serif;
+    /*margin: 0 0 10px;*/
+    font-size: 1.5em;
     line-height: 1.5em;
     font-weight: 300;
     font-family: 'Noto Serif', serif;
     letter-spacing: 0;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    /*text-shadow: 0 1px 3px rgba(0,0,0,0.15);*/
 }
 
 /* Every post, on every page, gets this style on its <article> tag */
@@ -511,7 +528,6 @@ margin on the iframe, cause it breaks stuff. */
     width:80%;
     max-width: 1000px;
     margin: 4rem auto;
-    padding-bottom: 4rem;
     border-bottom: #EBF2F6 1px solid;
     word-break: break-word;
     hyphens: auto;
@@ -519,7 +535,7 @@ margin on the iframe, cause it breaks stuff. */
 }
 
 /* Add a little circle in the middle of the border-bottom on our .post
-   just for the lolz and stylepoints. */
+just for the lolz and stylepoints. */
 .post:after {
     display: block;
     content: "";
@@ -539,6 +555,8 @@ margin on the iframe, cause it breaks stuff. */
 
 .post-title {
     margin:0;
+    font-size: 26px;
+    display: inline-block;
 }
 
 .post-title a {
@@ -553,11 +571,11 @@ margin on the iframe, cause it breaks stuff. */
 }
 
 .post-meta {
-    display: inline-block;
-    margin: 0 0 5px 0;
-    font-family: 'Open Sans', sans-serif;
-    font-size: 1.5rem;
-    color: #9EABB3;
+background: #3c424f;
+color: #fff;
+padding: 20px;
+display: inline-block;
+margin-right: 20px;
 }
 
 .post-meta a {
@@ -617,7 +635,7 @@ margin on the iframe, cause it breaks stuff. */
    ========================================================================== */
 
 /* Stop .full-img from creating horizontal scroll - slight hack due to
-   imperfections with browser width % calculations and rounding */
+imperfections with browser width % calculations and rounding */
 .post-template .content {
     overflow: hidden;
 }
@@ -655,7 +673,7 @@ margin on the iframe, cause it breaks stuff. */
 }
 
 /* Break out larger images to be wider than the main text column
-   the class is applied with jQuery */
+the class is applied with jQuery */
 .post-content .full-img {
     width: 126%;
     max-width: none;
@@ -725,7 +743,7 @@ margin on the iframe, cause it breaks stuff. */
    Doing it like this means it's easier for the author bio
    to be flexible at smaller screen sizes while the share
    links remain at a fixed width the whole time */
-.post-footer .share {
+   .post-footer .share {
     position: absolute;
     top: 4rem;
     right: 0;
@@ -749,7 +767,7 @@ margin on the iframe, cause it breaks stuff. */
    6. Tag archive
    ========================================================================== */
 
-.archive-template .site-head {
+   .archive-template .site-head {
     height: auto;
     padding-bottom: 5rem;
 }
@@ -798,9 +816,9 @@ margin on the iframe, cause it breaks stuff. */
    7. Third Party Elements - Embeds from other services
    ========================================================================== */
 
-/* Github */
+   /* Github */
 
-.gist table {
+   .gist table {
     margin: 0;
     font-size: 1.4rem;
 }
@@ -815,8 +833,8 @@ margin on the iframe, cause it breaks stuff. */
    8. Pagination - Tools to let you flick between pages
    ========================================================================== */
 
-/* The main wrapper for our pagination links */
-.pagination {
+   /* The main wrapper for our pagination links */
+   .pagination {
     position: relative;
     width: 80%;
     max-width: 700px;
@@ -866,7 +884,7 @@ margin on the iframe, cause it breaks stuff. */
    9. Footer - The bottom of every page
    ========================================================================== */
 
-.site-footer {
+   .site-footer {
     position: relative;
     margin: 8rem 0 0 0;
     padding: 4rem 0;
@@ -983,7 +1001,7 @@ margin on the iframe, cause it breaks stuff. */
    10. Media Queries - Smaller than 900px
    ========================================================================== */
 
-@media only screen and (max-width: 900px) {
+   @media only screen and (max-width: 900px) {
 
     blockquote {
         margin-left: 0;
@@ -1045,7 +1063,7 @@ margin on the iframe, cause it breaks stuff. */
    ========================================================================== */
 
 
-@media only screen and (max-width: 500px) {
+   @media only screen and (max-width: 500px) {
 
     .blog-logo img {
         max-height: 80px;
@@ -1158,3 +1176,33 @@ margin on the iframe, cause it breaks stuff. */
    End of file. Media queries should be the last thing here. Do not add stuff
    below this point, or it will probably fuck everything up.
    ========================================================================== */
+
+
+
+   .header{
+    margin-top: 5%;
+}
+
+
+.menu{
+
+}
+.container-menu{
+    width:80%;
+    margin: auto;
+}
+.container-menu nav{
+float: right;
+}
+.container-menu nav ul {
+
+    margin: 10px 0;
+}
+.container-menu nav ul li{
+    display: inline-block;
+    margin: 0 15px;
+}
+.container-menu nav ul li a{
+    text-decoration: none;
+    font-size: 16px;
+}
