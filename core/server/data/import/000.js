@@ -1,19 +1,20 @@
-var when   = require('when'),
-    _      = require('underscore'),
-    models = require('../../models'),
-    errors = require('../../errorHandling'),
+var Promise = require('bluebird'),
+    _       = require('lodash'),
+    models  = require('../../models'),
+    utils   = require('./utils'),
+
     Importer000;
 
-
 Importer000 = function () {
-    _.bindAll(this, 'basicImport');
+    _.bindAll(this, 'doImport');
 
     this.version = '000';
 
     this.importFrom = {
-        '000': this.basicImport,
-        '001': this.tempImport,
-        '002': this.tempImport
+        '000': this.doImport,
+        '001': this.doImport,
+        '002': this.doImport,
+        '003': this.doImport
     };
 };
 
@@ -21,139 +22,151 @@ Importer000.prototype.importData = function (data) {
     return this.canImport(data)
         .then(function (importerFunc) {
             return importerFunc(data);
-        }, function (reason) {
-            return when.reject(reason);
         });
 };
 
 Importer000.prototype.canImport = function (data) {
     if (data.meta && data.meta.version && this.importFrom[data.meta.version]) {
-        return when.resolve(this.importFrom[data.meta.version]);
+        return Promise.resolve(this.importFrom[data.meta.version]);
     }
 
-    return when.reject("Unsupported version of data: " + data.meta.version);
+    return Promise.reject('Unsupported version of data: ' + data.meta.version);
 };
 
+Importer000.prototype.loadUsers = function () {
+    var users = {all: {}};
 
-function stripProperties(properties, data) {
-    _.each(data, function (obj) {
-        _.each(properties, function (property) {
-            delete obj[property];
-        });
-    });
-    return data;
-}
-
-function preProcessPostTags(tableData) {
-    var postTags,
-        postsWithTags = {};
-
-
-    postTags = tableData.posts_tags;
-    _.each(postTags, function (post_tag) {
-        if (!postsWithTags.hasOwnProperty(post_tag.post_id)) {
-            postsWithTags[post_tag.post_id] = [];
-        }
-        postsWithTags[post_tag.post_id].push(post_tag.tag_id);
-    });
-
-    _.each(postsWithTags, function (tag_ids, post_id) {
-        var post, tags;
-        post = _.find(tableData.posts, function (post) {
-            return post.id === parseInt(post_id, 10);
-        });
-        if (post) {
-            tags = _.filter(tableData.tags, function (tag) {
-                return _.indexOf(tag_ids, tag.id) !== -1;
-            });
-            post.tags = [];
-            _.each(tags, function (tag) {
-                // names are unique.. this should get the right tags added
-                // as long as tags are added first;
-                post.tags.push({name: tag.name});
-            });
-        }
-    });
-
-    return tableData;
-}
-
-function importTags(ops, tableData) {
-    tableData = stripProperties(['id'], tableData);
-    _.each(tableData, function (tag) {
-        ops.push(models.Tag.read({name: tag.name}).then(function (_tag) {
-            if (!_tag) {
-                return models.Tag.add(tag);
+    return models.User.findAll({include: 'roles'}).then(function (_users) {
+        _users.forEach(function (user) {
+            users.all[user.get('email')] = {realId: user.get('id')};
+            if (user.related('roles').toJSON()[0] && user.related('roles').toJSON()[0].name === 'Owner') {
+                users.owner = user.toJSON();
             }
-            return when.resolve(_tag);
-        }));
+        });
+
+        if (!users.owner) {
+            return Promise.reject('Unable to find an owner');
+        }
+
+        return users;
     });
-}
+};
 
-function importPosts(ops, tableData) {
-    tableData = stripProperties(['id'], tableData);
-    _.each(tableData, function (post) {
-        ops.push(models.Post.add(post));
-    });
-}
+// Importer000.prototype.importerFunction = function (t) {
+//
+// };
 
-function importUsers(ops, tableData) {
-    tableData = stripProperties(['id'], tableData);
-    tableData[0].id = 1;
-    ops.push(models.User.edit(tableData[0]));
-}
-
-function importSettings(ops, tableData) {
-    // for settings we need to update individual settings, and insert any missing ones
-    // the one setting we MUST NOT update is the databaseVersion settings
-    var blackList = ['databaseVersion'];
-    tableData = stripProperties(['id'], tableData);
-    tableData = _.filter(tableData, function (data) {
-        return blackList.indexOf(data.key) === -1;
-    });
-
-    ops.push(models.Settings.edit(tableData));
-}
-
-// No data needs modifying, we just import whatever tables are available
-Importer000.prototype.basicImport = function (data) {
-    var ops = [],
-        tableData = data.data;
-
-    // Do any pre-processing of relationships (we can't depend on ids)
-    if (tableData.posts_tags && tableData.posts && tableData.tags) {
-        tableData = preProcessPostTags(tableData);
-    }
-
-    // Import things in the right order:
-    if (tableData.tags && tableData.tags.length) {
-        importTags(ops, tableData.tags);
-    }
-
-    if (tableData.posts && tableData.posts.length) {
-        importPosts(ops, tableData.posts);
-    }
+Importer000.prototype.doUserImport = function (t, tableData, users, errors) {
+    var userOps = [],
+        imported = [];
 
     if (tableData.users && tableData.users.length) {
-        importUsers(ops, tableData.users);
+        if (tableData.roles_users && tableData.roles_users.length) {
+            tableData = utils.preProcessRolesUsers(tableData);
+        }
+
+        // Import users, deduplicating with already present users
+        userOps = utils.importUsers(tableData.users, users, t);
+
+        return Promise.settle(userOps).then(function (descriptors) {
+            descriptors.forEach(function (d) {
+                if (d.isRejected()) {
+                    errors = errors.concat(d.reason());
+                } else {
+                    imported.push(d.value().toJSON());
+                }
+            });
+
+            // If adding the users fails,
+            if (errors.length > 0) {
+                t.rollback(errors);
+            } else {
+                return imported;
+            }
+        });
     }
 
-    if (tableData.settings && tableData.settings.length) {
-        importSettings(ops, tableData.settings);
-    }
+    return Promise.resolve({});
+};
 
-    /** do nothing with these tables, the data shouldn't have changed from the fixtures
-     *   permissions
-     *   roles
-     *   permissions_roles
-     *   permissions_users
-     *   roles_users
-     */
+Importer000.prototype.doImport = function (data) {
+    var self = this,
+        tableData = data.data,
+        imported = {},
+        errors = [],
+        users = {},
+        owner = {};
 
-    return when.all(ops).then(function (results) {
-        return when.resolve(results);
-    }, function (err) {
-        return when.reject("Error importing data: " + err.message || err, err.stack);
+    return self.loadUsers().then(function (result) {
+        owner = result.owner;
+        users = result.all;
+
+        return models.Base.transaction(function (t) {
+            // Step 1: Attempt to handle adding new users
+            self.doUserImport(t, tableData, users, errors).then(function (result) {
+                var importResults = [];
+
+                imported.users = result;
+
+                _.each(imported.users, function (user) {
+                    users[user.email] = {realId: user.id};
+                });
+
+                // process user data - need to figure out what users we have available for assigning stuff to etc
+                try {
+                    tableData = utils.processUsers(tableData, owner, users, ['posts', 'tags']);
+                } catch (error) {
+                    return t.rollback([error]);
+                }
+
+                // Do any pre-processing of relationships (we can't depend on ids)
+                if (tableData.posts_tags && tableData.posts && tableData.tags) {
+                    tableData = utils.preProcessPostTags(tableData);
+                }
+
+                // Import things in the right order
+
+                return utils.importTags(tableData.tags, t).then(function (results) {
+                    if (results) {
+                        importResults = importResults.concat(results);
+                    }
+
+                    return utils.importPosts(tableData.posts, t);
+                }).then(function (results) {
+                    if (results) {
+                        importResults = importResults.concat(results);
+                    }
+
+                    return utils.importSettings(tableData.settings, t);
+                }).then(function (results) {
+                    if (results) {
+                        importResults = importResults.concat(results);
+                    }
+                }).then(function () {
+                    importResults.forEach(function (p) {
+                        if (p.isRejected()) {
+                            errors = errors.concat(p.reason());
+                        }
+                    });
+
+                    if (errors.length === 0) {
+                        t.commit();
+                    } else {
+                        t.rollback(errors);
+                    }
+                });
+
+                /** do nothing with these tables, the data shouldn't have changed from the fixtures
+                 *   permissions
+                 *   roles
+                 *   permissions_roles
+                 *   permissions_users
+                 */
+            });
+        }).then(function () {
+            // TODO: could return statistics of imported items
+            return Promise.resolve();
+        });
     });
 };
 

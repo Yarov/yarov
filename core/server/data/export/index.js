@@ -1,46 +1,42 @@
-var when      = require('when'),
-    _         = require('underscore'),
-    migration = require('../migration'),
-    client    = require('../../models/base').client,
-    knex      = require('../../models/base').Knex,
+var _           = require('lodash'),
+    Promise     = require('bluebird'),
+    versioning  = require('../versioning'),
+    config      = require('../../config'),
+    utils       = require('../utils'),
+    serverUtils = require('../../utils'),
+    errors      = require('../../errors'),
+    settings    = require('../../api/settings'),
 
-    exporter;
+    excludedTables = ['accesstokens', 'refreshtokens', 'clients'],
+    exporter,
+    exportFileName;
 
-function getTablesFromSqlite3() {
-    return knex.Raw("select * from sqlite_master where type = 'table'").then(function (response) {
-        return _.reject(_.pluck(response, 'tbl_name'), function (name) {
-            return name === 'sqlite_sequence';
-        });
+exportFileName = function () {
+    var datetime = (new Date()).toJSON().substring(0, 10),
+        title = '';
+
+    return settings.read({key: 'title', context: {internal: true}}).then(function (result) {
+        if (result) {
+            title = serverUtils.safeString(result.settings[0].value) + '.';
+        }
+        return title + 'ghost.' + datetime + '.json';
+    }).catch(function (err) {
+        errors.logError(err);
+        return 'ghost.' + datetime + '.json';
     });
-}
-
-function getTablesFromMySQL() {
-    return knex.Raw('show tables').then(function (response) {
-        return _.flatten(_.map(response, function (entry) {
-            return _.values(entry);
-        }));
-    });
-}
+};
 
 exporter = function () {
-    var tablesToExport;
-
-    if (client === 'sqlite3') {
-        tablesToExport = getTablesFromSqlite3();
-    } else if (client === 'mysql') {
-        tablesToExport = getTablesFromMySQL();
-    } else {
-        return when.reject("No exporter for database client " + client);
-    }
-
-    return when.join(migration.getDatabaseVersion(), tablesToExport).then(function (results) {
+    return Promise.join(versioning.getDatabaseVersion(), utils.getTables()).then(function (results) {
         var version = results[0],
             tables = results[1],
             selectOps = _.map(tables, function (name) {
-                return knex(name).select();
+                if (excludedTables.indexOf(name) < 0) {
+                    return config.database.knex(name).select();
+                }
             });
 
-        return when.all(selectOps).then(function (tableData) {
+        return Promise.all(selectOps).then(function (tableData) {
             var exportData = {
                 meta: {
                     exported_on: new Date().getTime(),
@@ -55,11 +51,12 @@ exporter = function () {
                 exportData.data[name] = tableData[i];
             });
 
-            return when.resolve(exportData);
-        }, function (err) {
-            console.log("Error exporting data: " + err);
+            return exportData;
+        }).catch(function (err) {
+            errors.logAndThrowError(err, 'Error exporting data', '');
         });
     });
 };
 
 module.exports = exporter;
+module.exports.fileName = exportFileName;
