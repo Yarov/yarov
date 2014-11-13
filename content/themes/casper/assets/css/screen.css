@@ -466,7 +466,6 @@ margin on the iframe, cause it breaks stuff. */
 }
 .post-header a{
     display: inline-block;
-    width: 87%;
     height: 55px;
 }
 
