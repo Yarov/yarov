@@ -3,9 +3,9 @@
 {{! The comment above "< default" means - insert everything in this file into
     the {body} of the default.hbs template, which contains our header/footer. }}
 
-<header class="post-head" {{#if @blog.cover}}style="background-image: url({{@blog.cover}})"{{/if}}>
+{{!-- <header class="post-head" {{#if @blog.cover}}style="background-image: url({{@blog.cover}})"{{/if}}>
 
-</header>
+</header> --}}
 
 <main class="content" role="main">
 
@@ -25,10 +25,12 @@
         {{! Everything inside the #post tags pulls data from the post }}
         {{#post}}
 
-            <span class="post-meta"><time datetime="{{date format="YYYY-MM-DD"}}">{{date format='DD MMM YYYY'}}</time> {{tags prefix="on " separator=" | "}}</span>
+            <time datetime="{{date format="YYYY-MM-DD"}}">{{date format='DD MMM YYYY'}}</time> 
 
-            <h1 class="post-title">{{{title}}}</h1>
-
+            <h1 class="title-post">{{{title}}}</h1>
+            <p class="tag-post">
+                {{tags prefix="on " separator=" | "}}
+            </p>
             <section class="post-content">
                 {{content}}
             </section>
