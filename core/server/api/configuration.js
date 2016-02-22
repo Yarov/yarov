@@ -3,26 +3,41 @@
 var _                  = require('lodash'),
     config             = require('../config'),
     errors             = require('../errors'),
-    parsePackageJson   = require('../require-tree').parsePackageJson,
     Promise            = require('bluebird'),
+    i18n               = require('../i18n'),
 
     configuration;
 
+function labsFlag(key) {
+    return {
+        value: (config[key] === true),
+        type: 'bool'
+    };
+}
+
 function getValidKeys() {
     var validKeys = {
-            fileStorage: config.fileStorage === false ? false : true,
-            apps: config.apps === true ? true : false,
-            version: false,
+            fileStorage: {value: (config.fileStorage !== false), type: 'bool'},
+            publicAPI: labsFlag('publicAPI'),
+            apps: {value: (config.apps === true), type: 'bool'},
+            version: {value: config.ghostVersion, type: 'string'},
             environment: process.env.NODE_ENV,
             database: config.database.client,
             mail: _.isObject(config.mail) ? config.mail.transport : '',
-            blogUrl: config.url
+            blogUrl: {value: config.url.replace(/\/$/, ''), type: 'string'},
+            blogTitle: {value: config.theme.title, type: 'string'},
+            routeKeywords: {value: JSON.stringify(config.routeKeywords), type: 'json'}
         };
 
-    return parsePackageJson('package.json').then(function (json) {
-        validKeys.version = json.version;
-        return validKeys;
-    });
+    return validKeys;
+}
+
+function formatConfigurationObject(val, key) {
+    return {
+        key: key,
+        value: (_.isObject(val) && _.has(val, 'value')) ? val.value : val,
+        type: _.isObject(val) ? (val.type || null) : null
+    };
 }
 
 /**
@@ -38,14 +53,7 @@ configuration = {
      * @returns {Promise(Configurations)}
      */
     browse: function browse() {
-        return getValidKeys().then(function (result) {
-            return Promise.resolve({configuration: _.map(result, function (value, key) {
-                return {
-                    key: key,
-                    value: value
-                };
-            })});
-        });
+        return Promise.resolve({configuration: _.map(getValidKeys(), formatConfigurationObject)});
     },
 
     /**
@@ -53,16 +61,13 @@ configuration = {
      *
      */
     read: function read(options) {
-        return getValidKeys().then(function (result) {
-            if (_.has(result, options.key)) {
-                return Promise.resolve({configuration: [{
-                    key: options.key,
-                    value: result[options.key]
-                }]});
-            } else {
-                return Promise.reject(new errors.NotFoundError('Invalid key'));
-            }
-        });
+        var data = getValidKeys();
+
+        if (_.has(data, options.key)) {
+            return Promise.resolve({configuration: [formatConfigurationObject(data[options.key], options.key)]});
+        } else {
+            return Promise.reject(new errors.NotFoundError(i18n.t('errors.api.configuration.invalidKey')));
+        }
     }
 };
 

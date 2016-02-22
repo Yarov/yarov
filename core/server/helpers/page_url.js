@@ -11,23 +11,24 @@
 
 var config          = require('../config'),
     errors          = require('../errors'),
+    i18n            = require('../i18n'),
     page_url,
     pageUrl;
 
-page_url = function (context, block) {
+page_url = function (pageNum, options) {
     /*jshint unused:false*/
     var url = config.paths.subdir;
 
     if (this.tagSlug !== undefined) {
-        url += '/tag/' + this.tagSlug;
+        url += '/' + config.routeKeywords.tag + '/' + this.tagSlug;
     }
 
     if (this.authorSlug !== undefined) {
-        url += '/author/' + this.authorSlug;
+        url += '/' + config.routeKeywords.author + '/' + this.authorSlug;
     }
 
-    if (context > 1) {
-        url += '/page/' + context;
+    if (pageNum > 1) {
+        url += '/' + config.routeKeywords.page + '/' + pageNum;
     }
 
     url += '/';
@@ -43,15 +44,13 @@ page_url = function (context, block) {
 // Returns the URL for the page specified in the current object
 // context. This helper is deprecated and will be removed in future versions.
 //
-pageUrl = function (context, block) {
-    errors.logWarn('Warning: pageUrl is deprecated, please use page_url instead\n' +
-        'The helper pageUrl has been replaced with page_url in Ghost 0.4.2, and will be removed entirely in Ghost 0.6\n' +
-        'In your theme\'s pagination.hbs file, pageUrl should be renamed to page_url');
+pageUrl = function (pageNum, options) {
+    errors.logWarn(i18n.t('warnings.helpers.page_url.isDeprecated'));
 
     /*jshint unused:false*/
     var self = this;
 
-    return page_url.call(self, context, block);
+    return page_url.call(self, pageNum, options);
 };
 
 module.exports = page_url;

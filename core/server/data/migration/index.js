@@ -1,30 +1,32 @@
 var _               = require('lodash'),
     Promise         = require('bluebird'),
-    sequence        = require('../../utils/sequence'),
+    crypto          = require('crypto'),
     path            = require('path'),
     fs              = require('fs'),
-    errors          = require('../../errors'),
-    commands        = require('./commands'),
-    versioning      = require('../versioning'),
-    models          = require('../../models'),
-    fixtures        = require('../fixtures'),
+    builder         = require('./builder'),
+    fixtures        = require('./fixtures'),
     schema          = require('../schema').tables,
+    commands        = require('../schema').commands,
+    versioning      = require('../schema').versioning,
     dataExport      = require('../export'),
-    utils           = require('../utils'),
     config          = require('../../config'),
+    errors          = require('../../errors'),
+    models          = require('../../models'),
+    sequence        = require('../../utils/sequence'),
 
     schemaTables    = _.keys(schema),
 
     // private
     logInfo,
     populateDefaultSettings,
-    backupDatabase,
+    fixClientSecret,
 
     // public
     init,
     reset,
     migrateUp,
-    migrateUpFreshDb;
+    migrateUpFreshDb,
+    backupDatabase;
 
 logInfo = function logInfo(message) {
     errors.logInfo('Migrations', message);
@@ -33,7 +35,7 @@ logInfo = function logInfo(message) {
 populateDefaultSettings = function populateDefaultSettings() {
     // Initialise the default settings
     logInfo('Populating default settings');
-    return models.Settings.populateDefault('databaseVersion').then(function () {
+    return models.Settings.populateDefaults().then(function () {
         logInfo('Complete');
     });
 };
@@ -48,6 +50,19 @@ backupDatabase = function backupDatabase() {
             return Promise.promisify(fs.writeFile)(fileName, JSON.stringify(exportedData)).then(function () {
                 logInfo('Database backup written to: ' + fileName);
             });
+        });
+    });
+};
+
+// TODO: move to migration.to005() for next DB version
+fixClientSecret = function () {
+    return models.Clients.forge().query('where', 'secret', '=', 'not_available').fetch().then(function updateClients(results) {
+        return Promise.map(results.models, function mapper(client) {
+            if (process.env.NODE_ENV.indexOf('testing') !== 0) {
+                logInfo('Updating client secret');
+                client.secret = crypto.randomBytes(6).toString('hex');
+            }
+            return models.Client.edit(client, {context: {internal: true}, id: client.id});
         });
     });
 };
@@ -78,7 +93,8 @@ init = function (tablesOnly) {
         if (databaseVersion === defaultVersion) {
             // 1. The database exists and is up-to-date
             logInfo('Up to date at version ' + databaseVersion);
-            return;
+            // TODO: temporary fix for missing client.secret
+            return fixClientSecret();
         }
 
         if (databaseVersion > defaultVersion) {
@@ -107,7 +123,7 @@ init = function (tablesOnly) {
 reset = function () {
     var tables = _.map(schemaTables, function (table) {
         return function () {
-            return utils.deleteTable(table);
+            return commands.deleteTable(table);
         };
     }).reverse();
 
@@ -120,7 +136,7 @@ migrateUpFreshDb = function (tablesOnly) {
         tables = _.map(schemaTables, function (table) {
             return function () {
                 logInfo('Creating table: ' + table);
-                return utils.createTable(table);
+                return commands.createTable(table);
             };
         });
     logInfo('Creating tables...');
@@ -144,27 +160,28 @@ migrateUp = function (fromVersion, toVersion) {
         migrateOps = [];
 
     return backupDatabase().then(function () {
-        return utils.getTables();
+        return commands.getTables();
     }).then(function (tables) {
         oldTables = tables;
         if (!_.isEmpty(oldTables)) {
-            return utils.checkTables();
+            return commands.checkTables();
         }
     }).then(function () {
-        migrateOps = migrateOps.concat(commands.getDeleteCommands(oldTables, schemaTables));
-        migrateOps = migrateOps.concat(commands.getAddCommands(oldTables, schemaTables));
+        migrateOps = migrateOps.concat(builder.getDeleteCommands(oldTables, schemaTables));
+        migrateOps = migrateOps.concat(builder.getAddCommands(oldTables, schemaTables));
         return Promise.all(
             _.map(oldTables, function (table) {
-                return utils.getIndexes(table).then(function (indexes) {
-                    modifyUniCommands = modifyUniCommands.concat(commands.modifyUniqueCommands(table, indexes));
+                return commands.getIndexes(table).then(function (indexes) {
+                    modifyUniCommands = modifyUniCommands.concat(builder.modifyUniqueCommands(table, indexes));
                 });
             })
         );
     }).then(function () {
         return Promise.all(
             _.map(oldTables, function (table) {
-                return utils.getColumns(table).then(function (columns) {
-                    migrateOps = migrateOps.concat(commands.addColumnCommands(table, columns));
+                return commands.getColumns(table).then(function (columns) {
+                    migrateOps = migrateOps.concat(builder.dropColumnCommands(table, columns));
+                    migrateOps = migrateOps.concat(builder.addColumnCommands(table, columns));
                 });
             })
         );
@@ -178,15 +195,18 @@ migrateUp = function (fromVersion, toVersion) {
             return sequence(migrateOps);
         }
     }).then(function () {
-        return fixtures.update(fromVersion, toVersion);
-    }).then(function () {
+        // Ensure all of the current default settings are created (these are fixtures, so should be inserted first)
         return populateDefaultSettings();
+    }).then(function () {
+        // Finally, run any updates to the fixtures, including default settings
+        return fixtures.update(fromVersion, toVersion);
     });
 };
 
 module.exports = {
     init: init,
     reset: reset,
+    backupDatabase: backupDatabase,
     migrateUp: migrateUp,
     migrateUpFreshDb: migrateUpFreshDb
 };

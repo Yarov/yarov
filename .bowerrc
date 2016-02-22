@@ -1,3 +1,9 @@
 {
+<<<<<<< HEAD
     "directory": "bower_components"
 }
+=======
+    "cwd": "core/client/",
+    "directory": "bower_components"
+}
+>>>>>>> 37ef512a193b57e6b301c68101840bedd0473d58

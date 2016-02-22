@@ -10,6 +10,7 @@ content/themes/**
 !content/themes/casper/**
 content/apps/**
 !content/apps/README.md
+<<<<<<< HEAD
 node_modules/**
 core/test/**
 core/server/data/export/exported*
@@ -21,8 +22,31 @@ core/server/data/export/exported*
 .groc*
 *.iml
 config.js
+=======
+content/data/**
+!content/data/README.md
+node_modules/**
+**/*.db*
+*.db*
+.af*
+.git*
+.groc*
+.jshintrc
+*.iml
+config.js
+core/built/**/*.map
+core/built/**/test-*
+core/client/**
+core/test/**
+>>>>>>> 37ef512a193b57e6b301c68101840bedd0473d58
 CONTRIBUTING.md
 SECURITY.md
 .travis.yml
 *.html
+<<<<<<< HEAD
 bower_components/**
+=======
+!core/server/mail/templates/**
+bower_components/**
+.editorconfig
+>>>>>>> 37ef512a193b57e6b301c68101840bedd0473d58
